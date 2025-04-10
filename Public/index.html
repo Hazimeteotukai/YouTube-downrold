@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>YouTubeダウンロード</title>
+</head>
+<body>
+  <h1>YouTube ダウンローダー</h1>
+  <input type="text" id="url" placeholder="YouTubeのURL"><br>
+  
+  <label>
+    <input type="radio" name="type" value="mp3" checked> MP3
+  </label>
+  <label>
+    <input type="radio" name="type" value="mp4"> MP4
+  </label><br>
+
+  <select id="quality">
+    <!-- JSで動的に入れ替える -->
+  </select><br>
+
+  <button onclick="startDownload()">ダウンロード開始</button>
+
+  <script>
+    const qualitySelect = document.getElementById('quality');
+
+    document.querySelectorAll('input[name="type"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        updateQualityOptions();
+      });
+    });
+
+    function updateQualityOptions() {
+      const type = document.querySelector('input[name="type"]:checked').value;
+      qualitySelect.innerHTML = '';
+
+      if (type === 'mp3') {
+        [64, 128, 192, 256, 320].forEach(q => {
+          const option = document.createElement('option');
+          option.value = q;
+          option.text = `${q}kbps`;
+          qualitySelect.appendChild(option);
+        });
+      } else {
+        ['360p', '480p', '720p', '1080p'].forEach(q => {
+          const option = document.createElement('option');
+          option.value = q;
+          option.text = q;
+          qualitySelect.appendChild(option);
+        });
+      }
+    }
+
+    updateQualityOptions();
+
+    function startDownload() {
+      const url = document.getElementById('url').value;
+      const type = document.querySelector('input[name="type"]:checked').value;
+      const quality = qualitySelect.value;
+
+      fetch('/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, type, quality })
+      })
+      .then(response => {
+        if (response.ok) return response.blob();
+        throw new Error('失敗しました');
+      })
+      .then(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `video.${type}`;
+        a.click();
+      })
+      .catch(err => alert(err.message));
+    }
+  </script>
+</body>
+</html>
